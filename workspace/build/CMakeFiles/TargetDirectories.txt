@@ -1,0 +1,3 @@
+/home/fran/matricula/sii-56938/workspace/build/CMakeFiles/tenis.dir
+/home/fran/matricula/sii-56938/workspace/build/CMakeFiles/edit_cache.dir
+/home/fran/matricula/sii-56938/workspace/build/CMakeFiles/rebuild_cache.dir
