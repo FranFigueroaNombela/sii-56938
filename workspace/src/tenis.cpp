@@ -1,4 +1,7 @@
-#include "glut.h"
+//#include "glut.h"
+
+#include <GL/freeglut.h>
+
 #include "Mundo.h"
 
 //el unico objeto global
@@ -9,7 +12,7 @@ CMundo mundo;
 //NO HACE FALTA LLAMARLAS EXPLICITAMENTE
 void OnDraw(void); //esta funcion sera llamada para dibujar
 void OnTimer(int value); //esta funcion sera llamada cuando transcurra una temporizacion
-void OnKeyboardDown(unsigned char key, int x, int y); //cuando se pulse una tecla	
+void OnKeyboardDown(unsigned char key, int x, int y); //cuando se pulse una tecla
 
 int main(int argc,char* argv[])
 {
@@ -21,6 +24,8 @@ int main(int argc,char* argv[])
 	glutCreateWindow("Mundo");
 
 
+	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE,GLUT_ACTION_GLUTMAINLOOP_RETURNS);
+
 	//Registrar los callbacks
 	glutDisplayFunc(OnDraw);
 	//glutMouseFunc(OnRaton);
@@ -28,14 +33,14 @@ int main(int argc,char* argv[])
 	glutTimerFunc(25,OnTimer,0);//le decimos que dentro de 25ms llame 1 vez a la funcion OnTimer()
 	glutKeyboardFunc(OnKeyboardDown);
 	glutSetCursor(GLUT_CURSOR_FULL_CROSSHAIR);
-	
+
 	mundo.InitGL();
 
-	
-	//pasarle el control a GLUT,que llamara a los callbacks
-	glutMainLoop();	
 
-	return 0;   
+	//pasarle el control a GLUT,que llamara a los callbacks
+	glutMainLoop();
+
+	return 0;
 }
 
 void OnDraw(void)
