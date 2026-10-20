@@ -6,6 +6,7 @@
 
 #include <fstream>
 #include "Mundo.h"
+#include<new>
 //#include "glut.h"
 
 #include <GL/freeglut.h>
@@ -18,7 +19,9 @@
 // Bibliotecas para trabajar con la FIFO
 #include <fcntl.h>
 #include <unistd.h>
-
+// Bibliotecas para proyeccion en memoria
+#include <sys/mman.h>
+#include <cstdio>
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
@@ -26,6 +29,7 @@
 CMundo::CMundo()
 {
     fd = -1;
+    pDatos=nullptr;
     Init();
 }
 
@@ -35,6 +39,13 @@ CMundo::~CMundo()
     if (fd >= 0)
     {
         close(fd);
+    }
+    
+    // Liberar memoria compartida
+    if (pDatos != nullptr)
+    {
+        pDatos->~DatosMemCompartida();
+    	munmap(pDatos, sizeof(DatosMemCompartida));
     }
 }
 
@@ -145,6 +156,24 @@ void CMundo::OnDraw()
 
 void CMundo::OnTimer(int value)
 {
+
+    //CAMBIO DE PRACTICA 3
+     if (pDatos != nullptr)
+    {
+        if (pDatos->accion == 1)
+        {
+            OnKeyboardDown('w', 0, 0);
+        }
+        else if (pDatos->accion == -1)
+        {
+            OnKeyboardDown('s', 0, 0);
+        }
+        else
+        {
+            jugador1.velocidad.y = 0;
+        }
+    }
+    
     // Movimiento de los jugadores y la pelota
     jugador1.Mueve(0.025f);
     jugador2.Mueve(0.025f);
@@ -200,6 +229,10 @@ void CMundo::OnTimer(int value)
             if (puntos2 >= 3)
 	{
 	    printf("Fin de la partida. Gana el jugador 2.\n");
+	    if (pDatos != nullptr)
+	{
+   	    pDatos->finPartida = 1;
+	}
             glutLeaveMainLoop();
             return;
 	}
@@ -248,6 +281,10 @@ void CMundo::OnTimer(int value)
             if (puntos1 >= 3)
 	{
 	    printf("Fin de la partida. Gana el jugador 1.\n");
+	    if (pDatos != nullptr)
+	{
+    	    pDatos->finPartida = 1;
+	}
             glutLeaveMainLoop();
             return;
 	}
@@ -258,6 +295,18 @@ void CMundo::OnTimer(int value)
             }
         }
     }
+    
+    
+    //CAMBIO DE PRACTCA 3
+    if (pDatos != nullptr)
+   {
+     pDatos->esfera.centro = esfera.centro;
+
+     pDatos->raqueta1.y1 = jugador1.y1;
+     pDatos->raqueta1.y2 = jugador1.y2;
+   }
+    
+    
 }
 
 void CMundo::OnKeyboardDown(unsigned char key, int x, int y)
@@ -344,5 +393,40 @@ void CMundo::Init()
     {
         perror("Error al abrir la FIFO");
     }
+    
+    // --------------------------------------
+    // CODIGO PROYECCION EN MEMORIA
+    // --------------------------------------
+    int fdMem = open("/tmp/tenis_mem", O_RDWR | O_CREAT, 0666);
 
+    if (fdMem == -1)
+    {
+    	perror("Error al abrir el fichero compartido");
+    	return;
+    }
+
+    if (ftruncate(fdMem, sizeof(DatosMemCompartida)) == -1)
+    {
+    	perror("Error al establecer el tamaño del fichero");
+    	close(fdMem);
+    	return;
+    }
+
+    void* direccion = mmap(nullptr,sizeof(DatosMemCompartida),PROT_READ | PROT_WRITE,MAP_SHARED,fdMem,0);
+
+    if (direccion == MAP_FAILED)
+    {
+    	perror("Error al proyectar la memoria");
+    	close(fdMem);
+    	return;
+    }
+
+    close(fdMem);
+
+    pDatos = new(direccion) DatosMemCompartida;
+    pDatos->accion = 0;
+    pDatos->finPartida = 0;
+    pDatos->esfera.centro = esfera.centro;
+    pDatos->raqueta1.y1 = jugador1.y1;
+    pDatos->raqueta1.y2 = jugador1.y2;
 }
